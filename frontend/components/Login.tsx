@@ -10,19 +10,24 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin, showNotification }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) {
-      showNotification({ type: 'error', message: 'Please enter a username.' });
+    if (!email.trim()) {
+      showNotification({ type: 'error', message: 'Please enter an email.' });
+      return;
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showNotification({ type: 'error', message: 'Please enter a valid email address.' });
       return;
     }
     setIsLoading(true);
     try {
-      const user = await api.login(username, password);
+      const user = await api.login(email);
       onLogin(user);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -37,30 +42,17 @@ const Login: React.FC<LoginProps> = ({ onLogin, showNotification }) => {
       <h2 className="text-3xl font-bold text-center text-white">Join the Flash Sale</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="username" className="text-sm font-medium text-gray-400">
-            Username
+          <label htmlFor="email" className="text-sm font-medium text-gray-400">
+            Email
           </label>
           <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="mt-1 block w-full px-4 py-3 bg-secondary border border-gray-600 rounded-md shadow-sm text-white placeholder-gray-500 focus:outline-none focus:ring-primary focus:border-primary"
-            placeholder="Enter your username"
+            placeholder="Enter your email"
             required
-          />
-        </div>
-        <div>
-          <label htmlFor="password"  className="text-sm font-medium text-gray-400">
-            Password <span className="text-xs text-gray-500">(Optional)</span>
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full px-4 py-3 bg-secondary border border-gray-600 rounded-md shadow-sm text-white placeholder-gray-500 focus:outline-none focus:ring-primary focus:border-primary"
-            placeholder="••••••••"
           />
         </div>
         <button

@@ -65,7 +65,7 @@ This flash sale system demonstrates a real-world e-commerce scenario where a lim
 - ✅ **Simple Frontend Interface**: React-based UI with real-time updates
 
 ### API Endpoints
-- `GET /api/flash-sale/state` - Current sale status and product info
+- `GET /api/flash-sale/state/:userId` - Current sale status and product info
 - `POST /api/flash-sale/purchase` - Attempt item purchase  
 - `GET /api/flash-sale/user/:userId/purchase` - Check user purchase status
 - `POST /api/auth/login` - User authentication
@@ -196,14 +196,13 @@ POST /api/auth/login
 Content-Type: application/json
 
 {
-  "username": "user123",
-  "password": "optional"
+  "email": "user123"
 }
 ```
 
 ### Flash Sale State
 ```http
-GET /api/flash-sale/state
+GET /api/flash-sale/state/:userId
 ```
 
 ### Purchase Attempt

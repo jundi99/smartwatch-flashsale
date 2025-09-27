@@ -54,7 +54,7 @@ const FlashSale: React.FC<FlashSaleProps> = ({ user, showNotification }) => {
 
   const fetchSaleState = useCallback(async () => {
     try {
-      const state = await api.getFlashSaleState();
+      const state = await api.getFlashSaleState(user.id);
       setSaleState(state);
     } catch (error) {
       showNotification({ type: 'error', message: 'Could not fetch sale status.' });
@@ -129,6 +129,8 @@ const FlashSale: React.FC<FlashSaleProps> = ({ user, showNotification }) => {
         );
       case SaleStatus.SOLD_OUT:
         return <div className="text-center p-4 bg-red-800 bg-opacity-50 rounded-lg"><h3 className="text-xl font-semibold text-danger">Sold Out!</h3><p>Better luck next time.</p></div>;
+      case SaleStatus.PURCHASE_SUCCESS:
+        return <div className="text-center p-4 bg-blue-800 bg-opacity-50 rounded-lg"><h3 className="text-xl font-semibold text-green-500">Purchase Success!</h3><p>🎊 Congratulation 🎊</p></div>;
       case SaleStatus.ENDED:
         return <div className="text-center p-4 bg-gray-700 rounded-lg"><h3 className="text-xl font-semibold text-gray-400">Sale has Ended</h3></div>;
       default:

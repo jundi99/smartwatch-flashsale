@@ -25,28 +25,28 @@ describe('Flash Sale API Integration Tests', () => {
     })
 
     describe('POST /api/auth/login', () => {
-        test('should login successfully with valid username', async () => {
+        test('should login successfully with valid email', async () => {
             const response = await request(app)
                 .post('/api/auth/login')
-                .send({ username: 'testuser' })
+                .send({ email: 'test@example.com' })
                 .expect(200)
 
             expect(response.body.success).toBe(true)
-            expect(response.body.data.username).toBe('testuser')
-            expect(response.body.data.id).toBe('user_testuser')
+            expect(response.body.data.email).toBe('test@example.com')
+            expect(response.body.data.id).toBe('user_test_example_com')
         })
 
-        test('should fail with invalid username', async () => {
+        test('should fail with invalid email format', async () => {
             const response = await request(app)
                 .post('/api/auth/login')
-                .send({ username: 'ab' }) // Too short
+                .send({ email: 'invalid-email' })
                 .expect(400)
 
             expect(response.body.success).toBe(false)
             expect(response.body.message).toBe('Validation error')
         })
 
-        test('should fail with missing username', async () => {
+        test('should fail with missing email', async () => {
             const response = await request(app)
                 .post('/api/auth/login')
                 .send({})
@@ -57,10 +57,10 @@ describe('Flash Sale API Integration Tests', () => {
         })
     })
 
-    describe('GET /api/flash-sale/state', () => {
+    describe('GET /api/flash-sale/state/:userId', () => {
         test('should return current flash sale state', async () => {
             const response = await request(app)
-                .get('/api/flash-sale/state')
+                .get('/api/flash-sale/state/123')
                 .expect(200)
 
             expect(response.body.success).toBe(true)

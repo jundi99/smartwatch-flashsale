@@ -1,172 +1,193 @@
 const flashSaleService = require('../services/flashSaleService')
 
 class FlashSaleController {
-    constructor() {
-        // In-memory cache for getSaleState
-        this.cachedResponse = null
-        this.cacheTimestamp = 0
-        this.CACHE_DURATION = 1000 // 1 second in milliseconds
-    }
+  constructor () {
+    // In-memory cache for getSaleState - per userId
+    this.cachedResponses = new Map() // userId -> { response, timestamp }
+    this.CACHE_DURATION = 1000 // 1 second in milliseconds
+  }
 
-    async getSaleState(req, res) {
-        try {
-            const now = Date.now()
+  async getSaleState (req, res) {
+    try {
+      const now = Date.now()
+      const userId = req.params.userId
 
-            // Check if we have fresh cached data
-            if (this.cachedResponse && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
-                const etag = this.cachedResponse.etag
+      // Check if we have fresh cached data for this specific user
+      const userCache = this.cachedResponses.get(userId)
 
-                // Early ETag check with cached data - no business logic execution needed!
-                if (req.headers['if-none-match'] === etag) {
-                    res.set({
-                        'Cache-Control': 'public, max-age=1',
-                        'ETag': etag
-                    })
-                    return res.status(304).end()
-                }
+      if (userCache && (now - userCache.timestamp) < this.CACHE_DURATION) {
+        const etag = userCache.response.etag
 
-                // Return cached full response - still no business logic execution!
-                res.set({
-                    'Cache-Control': 'public, max-age=1',
-                    'ETag': etag
-                })
-                return res.json(this.cachedResponse.data)
-            }
-
-            // Cache expired or no cache - get fresh data (business logic executes only here)
-            const saleState = flashSaleService.getCurrentSaleState()
-            const etag = `"${saleState.currentStock}-${saleState.status}-${saleState.startTime}"`
-
-            // Update cache
-            this.cachedResponse = {
-                etag,
-                data: {
-                    success: true,
-                    data: saleState
-                }
-            }
-            this.cacheTimestamp = now
-
-            // Handle conditional requests for fresh data
-            if (req.headers['if-none-match'] === etag) {
-                res.set({
-                    'Cache-Control': 'public, max-age=1',
-                    'ETag': etag
-                })
-                return res.status(304).end()
-            }
-
-            res.set({
-                'Cache-Control': 'public, max-age=1',
-                'ETag': etag
-            })
-
-            res.json(this.cachedResponse.data)
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: error.message
-            })
+        // Early ETag check with cached data - no business logic execution needed!
+        if (req.headers['if-none-match'] === etag) {
+          res.set({
+            'Cache-Control': 'public, max-age=1',
+            ETag: etag
+          })
+          return res.status(304).end()
         }
+
+        // Return cached full response - still no business logic execution!
+        res.set({
+          'Cache-Control': 'public, max-age=1',
+          ETag: etag
+        })
+
+        return res.json(userCache.response.data)
+      }
+
+      const saleState = flashSaleService.getCurrentSaleState(userId)
+      const etag = `"${saleState.currentStock}-${saleState.status}-${saleState.startTime}"`
+
+      // Update cache for this specific user
+      const responseData = {
+        success: true,
+        data: saleState
+      }
+
+      this.cachedResponses.set(userId, {
+        response: {
+          etag,
+          data: responseData
+        },
+        timestamp: now
+      })
+
+      // Handle conditional requests for fresh data
+      if (req.headers['if-none-match'] === etag) {
+        res.set({
+          'Cache-Control': 'public, max-age=1',
+          ETag: etag
+        })
+        return res.status(304).end()
+      }
+
+      res.set({
+        'Cache-Control': 'public, max-age=1',
+        ETag: etag
+      })
+
+      res.json(responseData)
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      })
     }
+  }
 
-    async attemptPurchase(req, res) {
-        try {
-            const { userId } = req.validatedData
+  async attemptPurchase (req, res) {
+    try {
+      const { userId } = req.validatedData
 
-            // Simulate processing time and network latency
-            const delay = Math.random() * 300 + 100 // 100-400ms
-            await new Promise(resolve => setTimeout(resolve, delay))
+      // Simulate processing time and network latency
+      const delay = Math.random() * 300 + 100 // 100-400ms
+      await new Promise(resolve => setTimeout(resolve, delay))
 
-            const result = flashSaleService.attemptPurchase(userId)
+      const result = flashSaleService.attemptPurchase(userId)
 
-            // Clear cache if purchase was successful (state changed)
-            if (result.success) {
-                this.cachedResponse = null
-                this.cacheTimestamp = 0
-            }
+      // Clear all cached responses if purchase was successful (state changed for all users)
+      if (result.success) {
+        this.cachedResponses.clear()
+      }
 
-            const statusCode = result.success ? 200 : 400
+      const statusCode = result.success ? 200 : 400
 
-            res.status(statusCode).json({
-                success: result.success,
-                message: result.message,
-                userHasPurchased: result.userHasPurchased
-            })
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'An unexpected error occurred during purchase.'
-            })
+      res.status(statusCode).json({
+        success: result.success,
+        message: result.message,
+        userHasPurchased: result.userHasPurchased
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'An unexpected error occurred during purchase.'
+      })
+    }
+  }
+
+  async checkUserPurchase (req, res) {
+    try {
+      const { userId } = req.validatedData
+
+      const hasPurchased = flashSaleService.hasUserPurchased(userId)
+
+      res.json({
+        success: true,
+        data: {
+          hasPurchased,
+          userId
         }
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      })
     }
+  }
 
-    async checkUserPurchase(req, res) {
-        try {
-            const { userId } = req.validatedData
+  async getStats (req, res) {
+    try {
+      const stats = flashSaleService.getStats()
 
-            const hasPurchased = flashSaleService.hasUserPurchased(userId)
-
-            res.json({
-                success: true,
-                data: {
-                    hasPurchased,
-                    userId
-                }
-            })
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: error.message
-            })
-        }
+      res.json({
+        success: true,
+        data: stats
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      })
     }
+  }
 
-    async getStats(req, res) {
-        try {
-            const stats = flashSaleService.getStats()
+  // For testing/admin purposes
+  async resetSale (req, res) {
+    try {
+      flashSaleService.resetSale()
 
-            res.json({
-                success: true,
-                data: stats
-            })
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: error.message
-            })
-        }
+      // Clear all cached responses after reset (state definitely changed for all users)
+      this.cachedResponses.clear()
+
+      res.json({
+        success: true,
+        message: 'Flash sale has been reset'
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      })
     }
+  }
 
-    // For testing/admin purposes
-    async resetSale(req, res) {
-        try {
-            flashSaleService.resetSale()
+  async listAllPurchases (req, res) {
+    try {
+      const purchases = flashSaleService.listAllPurchases()
 
-            // Clear cache after reset (state definitely changed)
-            this.cachedResponse = null
-            this.cacheTimestamp = 0
-
-            res.json({
-                success: true,
-                message: 'Flash sale has been reset'
-            })
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: error.message
-            })
-        }
+      res.json({
+        success: true,
+        data: purchases
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      })
     }
+  }
 }
 
 // Create and bind methods to maintain 'this' context
 const flashSaleControllerInstance = new FlashSaleController()
 
 module.exports = {
-    getSaleState: flashSaleControllerInstance.getSaleState.bind(flashSaleControllerInstance),
-    attemptPurchase: flashSaleControllerInstance.attemptPurchase.bind(flashSaleControllerInstance),
-    checkUserPurchase: flashSaleControllerInstance.checkUserPurchase.bind(flashSaleControllerInstance),
-    getStats: flashSaleControllerInstance.getStats.bind(flashSaleControllerInstance),
-    resetSale: flashSaleControllerInstance.resetSale.bind(flashSaleControllerInstance)
+  getSaleState: flashSaleControllerInstance.getSaleState.bind(flashSaleControllerInstance),
+  attemptPurchase: flashSaleControllerInstance.attemptPurchase.bind(flashSaleControllerInstance),
+  checkUserPurchase: flashSaleControllerInstance.checkUserPurchase.bind(flashSaleControllerInstance),
+  getStats: flashSaleControllerInstance.getStats.bind(flashSaleControllerInstance),
+  resetSale: flashSaleControllerInstance.resetSale.bind(flashSaleControllerInstance),
+  listAllPurchases: flashSaleControllerInstance.listAllPurchases.bind(flashSaleControllerInstance)
 }

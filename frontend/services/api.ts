@@ -11,7 +11,7 @@ class ApiError extends Error {
 
 async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   try {
     const response = await fetch(url, {
       headers: {
@@ -32,24 +32,24 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     // Handle network errors
     throw new ApiError('Network error occurred. Please check your connection.');
   }
 }
 
 export const api = {
-  login: async (username: string, password?: string): Promise<User> => {
+  login: async (email: string): Promise<User> => {
     const response = await makeRequest<{ success: boolean; data: User }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email }),
     });
-    
+
     return response.data;
   },
 
-  getFlashSaleState: async (): Promise<FlashSaleState> => {
-    const response = await makeRequest<{ success: boolean; data: FlashSaleState }>('/flash-sale/state');
+  getFlashSaleState: async (userId: string): Promise<FlashSaleState> => {
+    const response = await makeRequest<{ success: boolean; data: FlashSaleState }>(`/flash-sale/state/${userId}`);
     return response.data;
   },
 
@@ -59,10 +59,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ userId }),
       });
-      
-      return { 
-        success: response.success, 
-        message: response.message 
+
+      return {
+        success: response.success,
+        message: response.message
       };
     } catch (error) {
       if (error instanceof ApiError && error.status === 400) {
@@ -78,9 +78,9 @@ export const api = {
           return { success: false, message: error.message };
         }
       }
-      
-      return { 
-        success: false, 
+
+      return {
+        success: false,
         message: error instanceof Error ? error.message : 'Unknown error occurred'
       };
     }

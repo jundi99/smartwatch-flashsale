@@ -25,9 +25,14 @@ export const options = {
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3001'
 
-// Generate unique user ID for each VU
+// Generate unique user email for each VU
+function getUserEmail() {
+    return `stress_user_${__VU}_${Math.random().toString(36).substr(2, 9)}@test.com`
+}
+
 function getUserId() {
-    return `stress_user_${__VU}_${Math.random().toString(36).substr(2, 9)}`
+    const email = getUserEmail()
+    return `user_${email.replace(/[@.]/g, '_')}`
 }
 
 export function setup() {
@@ -42,10 +47,11 @@ export function setup() {
 }
 
 export default function (data) {
+    const userEmail = getUserEmail()
     const userId = getUserId()
 
     // Test 1: Check flash sale state
-    const stateResponse = http.get(`${data.baseUrl}/api/flash-sale/state`)
+    const stateResponse = http.get(`${data.baseUrl}/api/flash-sale/state/${userId}`)
     check(stateResponse, {
         'state check successful': (r) => r.status === 200,
         'state has valid structure': (r) => {
@@ -58,7 +64,7 @@ export default function (data) {
 
     // Test 2: Attempt login
     const loginPayload = JSON.stringify({
-        username: userId.replace('stress_user_', 'user')
+        email: userEmail
     })
 
     const loginResponse = http.post(`${data.baseUrl}/api/auth/login`, loginPayload, {
@@ -96,10 +102,10 @@ export default function (data) {
 
     // Log purchase results for debugging
     if (purchaseSuccess) {
-        console.log(`${userId}: Purchase SUCCESS`)
+        console.log(`${userEmail}: Purchase SUCCESS`)
     } else {
         const body = JSON.parse(purchaseResponse.body)
-        console.log(`${userId}: Purchase FAILED - ${body.message}`)
+        console.log(`${userEmail}: Purchase FAILED - ${body.message}`)
     }
 
     sleep(0.5) // Realistic user behavior pause

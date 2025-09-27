@@ -12,7 +12,7 @@ const App: React.FC = () => {
 
   const handleLogin = (loggedInUser: User) => {
     setUser(loggedInUser);
-    showNotification({ type: 'success', message: `Welcome, ${loggedInUser.username}!` });
+    showNotification({ type: 'success', message: `Welcome, ${loggedInUser.email}!` });
   };
 
   const handleLogout = () => {

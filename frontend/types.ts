@@ -1,7 +1,7 @@
 
 export interface User {
   id: string;
-  username: string;
+  email: string;
 }
 
 export interface Product {
@@ -17,6 +17,7 @@ export enum SaleStatus {
   ACTIVE = 'ACTIVE',
   ENDED = 'ENDED',
   SOLD_OUT = 'SOLD_OUT',
+  PURCHASE_SUCCESS = 'PURCHASE_SUCCESS'
 }
 
 export interface FlashSaleState {

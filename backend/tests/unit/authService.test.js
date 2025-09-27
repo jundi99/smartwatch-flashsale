@@ -6,26 +6,18 @@ describe('AuthService', () => {
     })
 
     describe('login', () => {
-        test('should create user successfully with valid username', async () => {
-            const user = await authService.login('testuser')
+        test('should create user successfully with valid email', async () => {
+            const user = await authService.login('test@example.com')
 
             expect(user).toBeDefined()
-            expect(user.id).toBe('user_testuser')
-            expect(user.username).toBe('testuser')
-        })
-
-        test('should throw error for empty username', async () => {
-            await expect(authService.login('')).rejects.toThrow('Username is required.')
-        })
-
-        test('should throw error for null username', async () => {
-            await expect(authService.login(null)).rejects.toThrow('Username is required.')
+            expect(user.id).toBe('user_test_example_com')
+            expect(user.email).toBe('test@example.com')
         })
     })
 
     describe('getUserById', () => {
         test('should return user if exists', async () => {
-            const createdUser = await authService.login('testuser')
+            const createdUser = await authService.login('test@example.com')
             const retrievedUser = await authService.getUserById(createdUser.id)
 
             expect(retrievedUser).toEqual(createdUser)

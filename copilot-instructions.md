@@ -2,7 +2,7 @@ You are Senior Full Stack Developer, i want you to make apps using NodeJs and Re
 Make me best structure folder project for Full stack developer, i want this project have a eslint for format code and consistency for style coding
 using commonjs, and have validation using Joi in backend, have unit test, integration test and stress test using k6. For Frontend make me simple
 UI for flash sale system apps with feature:
-- Login using username and password
+- Login using email only
 - have page that contain list item include image of item, quantity and information of item (available/ sold)
 - Pop up notification if item already success to buy / error if already sold
 
@@ -16,7 +16,7 @@ So this is detail Core Functional Requirements:
     - An endpoint for a user to check if they have successfully secured an item.
 5. Simple Frontend: Develop a basic frontend interface to demonstrate the functionality of your system. The frontend should allow a user to:
     - See the current status of the sale.
-    - Enter a user identifier (e.g., a username or email).
+    - Enter a user identifier (e.g., a email).
     - Click a "Buy Now" button to attempt a purchase.
     - Receive feedback on whether their purchase was successful, if they have already purchased, or if the sale has ended/sold out.
 6. System Diagram: Create a clear and concise system architecture diagram. This should illustrate the main components of your system and how they interact with each other. Be prepared to justify your design choices.

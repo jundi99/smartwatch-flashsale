@@ -6,12 +6,12 @@ const router = express.Router()
 
 // Health check endpoint
 router.get('/health', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Flash Sale API is running',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    })
+  res.json({
+    success: true,
+    message: 'Flash Sale API is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  })
 })
 
 // Mount route modules
