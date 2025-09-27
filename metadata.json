@@ -1,0 +1,5 @@
+{
+  "name": "Smartwatch Flash Sale System",
+  "description": "A sleek and responsive frontend for a high-throughput flash sale system, demonstrating real-time stock updates, user authentication, and purchase notifications. Built with React, TypeScript, and Tailwind CSS.",
+  "requestFramePermissions": []
+}
