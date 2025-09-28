@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "dev:stress": "STRESS_TEST=true PORT=3002 PRE_SALE_WAIT_MS=2000 nodemon src/app.js",
+    "dev:stress": "STRESS_TEST=true PORT=3002 PRE_SALE_WAIT_MS=2000 PRODUCT_STOCK=200 nodemon src/app.js",
     "test": "jest",
     "test:unit": "jest --testPathPattern=tests/unit",
     "test:integration": "jest --testPathPattern=tests/integration",
