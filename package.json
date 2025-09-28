@@ -1,11 +1,12 @@
 {
   "name": "smartwatch-flash-sale-system",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
     "dev": "npm run dev:backend & npm run dev:frontend",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
+    "dev:backend:stress": "cd backend && npm run dev:stress",
     "build": "cd frontend && npm run build",
     "test": "cd backend && npm test",
     "test:unit": "cd backend && npm run test:unit",

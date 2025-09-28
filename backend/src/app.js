@@ -14,23 +14,52 @@ const { log } = console
 // Security middleware
 app.use(helmet())
 
-// Rate limiting - more lenient in development
+// Rate limiting configuration based on environment
+const getRateLimitConfig = () => {
+  const isStressTesting = process.env.STRESS_TEST === 'true'
+
+  if (isStressTesting) {
+    return {
+      general: { windowMs: 1 * 60 * 1000, max: 10000 }, // Very high for stress testing
+      purchase: { windowMs: 10 * 1000, max: 1000 } // Allow many purchases for testing
+    }
+  } else {
+    return {
+      general: { windowMs: 15 * 60 * 1000, max: 100 },
+      purchase: { windowMs: 1 * 60 * 1000, max: 10 }
+    }
+  }
+}
+
+const rateLimitConfig = getRateLimitConfig()
+
+// General rate limiter
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // Higher limit for development
+  windowMs: rateLimitConfig.general.windowMs,
+  max: rateLimitConfig.general.max,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
+  },
+  // Skip localhost and test environments
+  skip: () => {
+    const isStressTesting = process.env.STRESS_TEST === 'true'
+    return isStressTesting
   }
 })
 
-// Purchase-specific rate limiting (more strict)
+// Purchase-specific rate limiting
 const purchaseLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: process.env.NODE_ENV === 'development' ? 50 : 10, // Higher limit for development
+  windowMs: rateLimitConfig.purchase.windowMs,
+  max: rateLimitConfig.purchase.max,
   message: {
     success: false,
     message: 'Too many purchase attempts, please try again later.'
+  },
+  // Skip localhost during stress testing
+  skip: () => {
+    const isStressTesting = process.env.STRESS_TEST === 'true'
+    return isStressTesting
   }
 })
 
@@ -103,6 +132,8 @@ if (require.main === module) {
     log(`🚀 Flash Sale API server running on port ${PORT}`)
     log(`📊 Environment: ${process.env.NODE_ENV}`)
     log(`🔗 CORS origin: ${process.env.CORS_ORIGIN}`)
+    log(`⚡ Stress testing: ${process.env.STRESS_TEST === 'true' ? 'ENABLED' : 'DISABLED'}`)
+    log(`🛡️  Rate limits - General: ${rateLimitConfig.general.max}/window, Purchase: ${rateLimitConfig.purchase.max}/window`)
   })
 }
 

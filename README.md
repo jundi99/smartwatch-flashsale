@@ -52,7 +52,9 @@ This flash sale system demonstrates a real-world e-commerce scenario where a lim
                     │ • ESLint Code Quality           │
                     └─────────────────────────────────┘
 
-* In production, this would be replaced with Redis/Database
+* In production, this would be replaced with 
+  - Redis/Database
+  - need module registration user and credential for user login
 ```
 
 ## ✨ Features
@@ -131,12 +133,15 @@ PRE_SALE_WAIT_MS=30000         # 30 seconds
 PRODUCT_STOCK=10
 CORS_ORIGIN=http://localhost:5173
 ```
+**Note**: Create a `.env` file in the `backend/` directory with the above configuration.
 
 #### Frontend (.env) 
 ```env
 VITE_API_BASE_URL=http://localhost:3001/api
 VITE_APP_PORT=5173
 ```
+
+**Note**: Create a `.env` file in the `frontend/` directory with the above configuration.
 
 ## 🎮 Running the Application
 
@@ -153,6 +158,7 @@ npm run dev:frontend   # Starts frontend on port 5173
 ### Accessing the Application
 - **Frontend UI**: http://localhost:5173
 - **Backend API**: http://localhost:3001
+- **Backend API For StressTest**: http://localhost:3002
 - **API Health Check**: http://localhost:3001/api/health
 
 ## 🧪 Testing
@@ -177,43 +183,52 @@ K6 Load Testing:
 # For Ubuntu/Debian:
 sudo apt-get update && sudo apt-get install k6
 
-# Run stress test (requires backend running)
-npm run dev:backend  # In one terminal
-npm run test:stress  # In another terminal
+# Run stress test (requires backend running on port 3002)
+npm run dev:backend:stress  # Starts backend on port 3002 for stress testing
+npm run test:stress         # In another terminal - runs K6 stress test
 ```
 
 ### Expected Stress Test Results
-The K6 stress test simulates 100-200 concurrent users attempting purchases:
-- **Success Rate**: 5-10% (realistic for limited stock)
-- **Response Time**: <500ms for 95% of requests
+The K6 stress test simulates up to 200 concurrent users (ramping from 10→100→200→0):
+- **Test Duration**: 30 seconds total with ramp up/down phases
+- **Success Rate**: Very low (realistic for limited stock flash sales)
+- **Response Time**: <500ms for 95% of requests, <200ms for 90% of successful requests
+- **High Failure Rate**: Up to 95% failure rate is acceptable (flash sale nature)
 - **Concurrency Control**: No overselling, proper stock management
 
 ## 📖 API Documentation
 
-### Authentication
+### User ID Format & Generation
+
+The system uses a specific User ID format for internal processing:
+
+**Format**: `user_{sanitized_email}`
+- The email is sanitized by replacing `@` and `.` characters with `_`
+- Example: `user@example.com` becomes `user_user_example_com`
+
+**Frontend Login**:
 ```http
 POST /api/auth/login
 Content-Type: application/json
 
 {
-  "email": "user123"
+  "email": "user123@mail.com"  // Simple identifier
 }
 ```
 
-### Flash Sale State
-```http
-GET /api/flash-sale/state/:userId
-```
-
-### Purchase Attempt
+**Backend Processing**:
 ```http
 POST /api/flash-sale/purchase
 Content-Type: application/json
 
 {
-  "userId": "user_user123"
+  "userId": "user_user123"  // Auto-generated format: user_{email}
 }
 ```
+
+**Usage in Stress Tests**:
+The K6 stress test automatically generates user IDs in this format:
+- Input: `user1@test.com` → Output: `user_user1_test_com`
 
 ## 🎯 Design Decisions
 
@@ -256,3 +271,25 @@ When running the K6 stress test with 200 concurrent users:
 - **Error Rate**: <5% (excluding expected sold-out responses)
 
 The system successfully prevents overselling while maintaining good performance under load.
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Port Already in Use**:
+```bash
+# If port 3001 is occupied:
+lsof -ti:3001 | xargs kill -9
+
+# If port 3002 is occupied (stress test):
+lsof -ti:3002 | xargs kill -9
+```
+
+**Stress Test Connection Issues**:
+- Ensure backend is running on port 3002: `npm run dev:backend:stress`
+- Check if K6 is properly installed: `k6 version`
+- Verify no firewall blocking localhost connections
+
+**User ID Format Issues**:
+- Frontend automatically handles user ID generation
+- Manual API calls must use format: `user_{identifier}`
